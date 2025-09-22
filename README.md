@@ -10,7 +10,9 @@
 ```
 文件下载的URL | 本地保存路径 | 文件的unix时间戳
 ```
+
 2）将上述格式的下载文件信息，每行一个，保存在文件 `filelist.txt` 中，例如 1000 行 就表示有 1000 个文件需要下载。
+
 3）运行命令：
 ```
 ./godown get
@@ -28,6 +30,7 @@
 ```
 /Users/harryzhu/ffmpeg/ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1  "/Users/harryzhu/1.mp4">/Users/harryzhu/1.mp4.txt
 ```
+
 2）运行命令：
 ```
 ./godown shell
@@ -35,5 +38,6 @@
 例如文件`cmdlist.txt`中有1000行这样的命令，CPU是16核心，那么 `godown` 就会默认以16个任务来并行检测这1000个视频是否都有效，并把结果写入你指定的文件 `>/Users/harryzhu/*.txt`。注意，不同命令的输出应该写入各自独立的结果输出文件，因为命令是并行的，如果所有结果写人同一个文件，会导致不可预知的错误。
 * `--workers=20` 可指定同时下载文件的任务数为`20`；
 * `--debug` 可以显示运行时信息；
+
 3）等待命令运行完成，使用其他工具对每个结果进行收集、分析。
 
