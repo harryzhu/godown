@@ -24,65 +24,6 @@ func init() {
 
 }
 
-func TaskRun2() {
-	flist := LoadFileList(FileList)
-	DebugInfo("count", len(flist))
-	taskq = make(chan string, len(flist)+1)
-	for _, v := range flist {
-		taskq <- v
-	}
-	taskTotal = len(flist)
-
-	taskq <- "ALLDONE"
-
-	var line string
-	var segments []string
-	var idx int32
-	var curNum int32
-
-	timeTaskStart := GetTimeNow()
-
-	for {
-
-		for {
-			if idx > int32(Workers) {
-				DebugInfo("WAIT", idx)
-				time.Sleep(time.Millisecond * 100)
-			} else {
-				break
-			}
-		}
-		fmt.Printf("TaskRun: %v \n", idx)
-		line = <-taskq
-		if line == "ALLDONE" {
-			DebugInfo("TaskRun", "ALLDONE")
-			fmt.Println("\n *** TaskRun Elapse:", time.Since(timeTaskStart), "***")
-			break
-		}
-		if !strings.Contains(line, "|") {
-			continue
-		}
-		segments = strings.Split(line, "|")
-		if len(segments) != 3 {
-			continue
-		}
-
-		ftarget := strings.TrimSpace(segments[0])
-		furl := strings.TrimSpace(segments[1])
-		ftime := strings.TrimSpace(segments[2])
-
-		go func(furl, ftarget, ftime string) {
-			DownloadFile(furl, ftarget, ftime)
-			atomic.AddInt32(&idx, -1)
-			atomic.AddInt32(&curNum, 1)
-
-			fmt.Printf("TaskRun: %v / %v: %v \n", curNum, taskTotal, ftarget)
-		}(furl, ftarget, ftime)
-
-		atomic.AddInt32(&idx, 1)
-	}
-}
-
 func GetRun() {
 	flist := LoadFileList(FileList)
 	DebugInfo("count", len(flist))
@@ -99,11 +40,13 @@ func GetRun() {
 	if len(flist) > 999 {
 		progressShowThreshold = 100
 	}
-
+	timeRoundStart := GetTimeUnix()
 	for k, v := range flist {
 		taskq <- v
 		if IsDebug || k%progressShowThreshold == 0 || atomic.LoadInt32(&curNum) == int32(len(flist)) {
-			fmt.Printf("GetRun: %02d => %v/%v \n", atomic.LoadInt32(&idx), atomic.LoadInt32(&curNum), len(flist))
+			timeRoundElapse := GetTimeUnix() - timeRoundStart
+			fmt.Printf("GetRun: %v sec => %02d => %v/%v \n", timeRoundElapse, atomic.LoadInt32(&idx), atomic.LoadInt32(&curNum), len(flist))
+			timeRoundStart = GetTimeUnix()
 		}
 
 		wg.Add(1)
@@ -135,10 +78,12 @@ func GetRun() {
 
 		atomic.AddInt32(&idx, 1)
 
-		if atomic.LoadInt32(&idx) >= int32(Workers) {
-			DebugInfo("WAIT", atomic.LoadInt32(&idx))
-
-			wg.Wait()
+		for {
+			if atomic.LoadInt32(&idx) >= int32(Workers) {
+				time.Sleep(time.Millisecond * 300)
+			} else {
+				break
+			}
 		}
 
 	}
@@ -312,11 +257,13 @@ func ShellRun() {
 	if len(flist) > 999 {
 		progressShowThreshold = 100
 	}
-
+	timeRoundStart := GetTimeUnix()
 	for k, v := range flist {
 		taskq <- v
 		if IsDebug || k%progressShowThreshold == 0 || atomic.LoadInt32(&curNum) == int32(len(flist)) {
-			fmt.Printf("ShellRun: %02d => %v/%v \n", atomic.LoadInt32(&idx), atomic.LoadInt32(&curNum), len(flist))
+			timeRoundElapse := GetTimeUnix() - timeRoundStart
+			fmt.Printf("ShellRun: %v sec => %02d => %v/%v \n", timeRoundElapse, atomic.LoadInt32(&idx), atomic.LoadInt32(&curNum), len(flist))
+			timeRoundStart = GetTimeUnix()
 		}
 
 		wg.Add(1)
@@ -332,12 +279,13 @@ func ShellRun() {
 
 		atomic.AddInt32(&idx, 1)
 
-		if atomic.LoadInt32(&idx) >= int32(Workers) {
-			DebugInfo("WAIT", atomic.LoadInt32(&idx))
-
-			wg.Wait()
+		for {
+			if atomic.LoadInt32(&idx) >= int32(Workers) {
+				time.Sleep(time.Millisecond * 300)
+			} else {
+				break
+			}
 		}
-
 	}
 
 	wg.Wait()

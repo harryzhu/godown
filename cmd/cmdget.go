@@ -8,8 +8,7 @@ import (
 )
 
 var (
-	FileList string
-
+	FileList         string
 	IsPurgeErrorFile bool
 	MinSize          int64
 )
@@ -33,7 +32,6 @@ func init() {
 	rootCmd.AddCommand(getCmd)
 
 	getCmd.PersistentFlags().StringVar(&FileList, "filelist", "filelist.txt", "file name")
-
 	getCmd.PersistentFlags().BoolVar(&IsPurgeErrorFile, "purge", false, "if purge unsuccessful files automatically")
 	getCmd.PersistentFlags().Int64Var(&MinSize, "minsize", 0, "if download file size <= minsize, remove it, 0 means unlimited")
 }

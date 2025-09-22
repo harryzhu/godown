@@ -4,6 +4,8 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"runtime"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +19,9 @@ var shellCmd = &cobra.Command{
 	Short: "--cmdlist=",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		if Workers == 3 {
+			Workers = runtime.NumCPU()
+		}
 		ShellRun()
 	},
 }
