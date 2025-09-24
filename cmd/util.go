@@ -44,8 +44,15 @@ func GetRun() {
 	for k, v := range flist {
 		taskq <- v
 		if IsDebug || k%progressShowThreshold == 0 || atomic.LoadInt32(&curNum) == int32(len(flist)) {
+			mem := GetMemStats()
 			timeRoundElapse := GetTimeUnix() - timeRoundStart
-			fmt.Printf("GetRun: %v sec => %02d => %v/%v \n", timeRoundElapse, atomic.LoadInt32(&idx), atomic.LoadInt32(&curNum), len(flist))
+			fmt.Printf("GetRun: %v sec => %02d => %v/%v [Mem: Total=%v MB, Sys=%v MB, NumGC=%v]\n",
+				timeRoundElapse,
+				atomic.LoadInt32(&idx),
+				atomic.LoadInt32(&curNum),
+				len(flist),
+				mem["TotalAlloc"], mem["Sys"], mem["NumGC"],
+			)
 			timeRoundStart = GetTimeUnix()
 		}
 
@@ -102,6 +109,22 @@ func GetTimeNow() time.Time {
 
 func GetTimeUnix() int64 {
 	return time.Now().Unix()
+}
+
+func GetMemStats() map[string]uint64 {
+	var mem runtime.MemStats
+	runtime.ReadMemStats(&mem)
+
+	var MB uint64 = 1024 * 1024
+	result := make(map[string]uint64)
+
+	result["Alloc"] = mem.Alloc / MB
+	result["TotalAlloc"] = mem.TotalAlloc / MB
+	result["Sys"] = mem.Sys / MB
+	result["HeapAlloc"] = mem.HeapAlloc / MB
+	result["HeapSys"] = mem.HeapSys / MB
+	result["NumGC"] = uint64(mem.NumGC)
+	return result
 }
 
 func SecondToTime(sec int64) time.Time {
@@ -261,8 +284,15 @@ func ShellRun() {
 	for k, v := range flist {
 		taskq <- v
 		if IsDebug || k%progressShowThreshold == 0 || atomic.LoadInt32(&curNum) == int32(len(flist)) {
+			mem := GetMemStats()
 			timeRoundElapse := GetTimeUnix() - timeRoundStart
-			fmt.Printf("ShellRun: %v sec => %02d => %v/%v \n", timeRoundElapse, atomic.LoadInt32(&idx), atomic.LoadInt32(&curNum), len(flist))
+			fmt.Printf("ShellRun: %v sec => %02d => %v/%v [Mem: Total=%v MB, Sys=%v MB, NumGC=%v]\n",
+				timeRoundElapse,
+				atomic.LoadInt32(&idx),
+				atomic.LoadInt32(&curNum),
+				len(flist),
+				mem["TotalAlloc"], mem["Sys"], mem["NumGC"],
+			)
 			timeRoundStart = GetTimeUnix()
 		}
 
