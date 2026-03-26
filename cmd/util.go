@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -180,8 +181,29 @@ func DownloadFile(furl, ftarget, mtime string) error {
 		return nil
 	}
 
-	downloadClient := &http.Client{
-		Timeout: 10 * time.Second,
+	var downloadClient *http.Client
+
+	if ViaIP != "" {
+		downloadClient = &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				Dial: func(network, addr string) (net.Conn, error) {
+					lAddr, err := net.ResolveTCPAddr(network, ViaIP+":0")
+					if err != nil {
+						return nil, err
+					}
+					rAddr, err := net.ResolveTCPAddr(network, addr)
+					if err != nil {
+						return nil, err
+					}
+					return net.DialTCP(network, lAddr, rAddr)
+				},
+			},
+		}
+	} else {
+		downloadClient = &http.Client{
+			Timeout: 10 * time.Second,
+		}
 	}
 
 	req, _ := http.NewRequest("GET", furl, nil)
@@ -206,14 +228,31 @@ func DownloadFile(furl, ftarget, mtime string) error {
 		os.MkdirAll(fdir, os.ModePerm)
 	}
 
+	contentLength := Str2Int64(resp.Header.Get("Content-Length"))
+	if MinSize != 0 && MaxSize != 0 && MaxSize > MinSize && contentLength != 0 {
+		if contentLength < MinSize || contentLength > MaxSize {
+			PrintlnInfo("[IGNORE] by --minszie or --maxsize Content-Length", contentLength)
+			if IsWithPlaceholder {
+				_, err := os.Stat(ftarget)
+				if err != nil {
+					phr, err := os.OpenFile(ftarget, os.O_WRONLY|os.O_CREATE, 0644)
+					PrintError("DownloadFile:os.OpenFile(ftarget)", err)
+					PrintlnInfo("Placeholder =>", ftarget)
+					phr.Close()
+				}
+			}
+			return nil
+		}
+	}
+
 	ftemp := strings.Join([]string{ftarget, "ing"}, ".")
 	out, err := os.OpenFile(ftemp, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	PrintError("DownloadFile:os.Create(ftemp)", err)
+	PrintError("DownloadFile:os.OpenFile(ftemp)", err)
 
 	_, errCopy := io.Copy(out, resp.Body)
 	out.Close()
 
-	tempInfo, err := os.Stat(ftemp)
+	_, err = os.Stat(ftemp)
 	if err != nil {
 		PrintError("DownloadFile:os.Stat(ftemp)", err)
 		return err
@@ -222,13 +261,6 @@ func DownloadFile(furl, ftarget, mtime string) error {
 	if IsPurgeErrorFile == true && errCopy != nil {
 		os.Remove(ftemp)
 		return errCopy
-	}
-
-	if MinSize != 0 {
-		if tempInfo.Size() <= MinSize {
-			os.Remove(ftemp)
-			return nil
-		}
 	}
 
 	err = os.Rename(ftemp, ftarget)

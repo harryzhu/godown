@@ -8,9 +8,12 @@ import (
 )
 
 var (
-	FileList         string
-	IsPurgeErrorFile bool
-	MinSize          int64
+	FileList          string
+	IsPurgeErrorFile  bool
+	IsWithPlaceholder bool
+	MinSize           int64
+	MaxSize           int64
+	ViaIP             string
 )
 
 // getCmd represents the get command
@@ -33,5 +36,8 @@ func init() {
 
 	getCmd.PersistentFlags().StringVar(&FileList, "filelist", "filelist.txt", "file name")
 	getCmd.PersistentFlags().BoolVar(&IsPurgeErrorFile, "purge", false, "if purge unsuccessful files automatically")
-	getCmd.PersistentFlags().Int64Var(&MinSize, "minsize", 0, "if download file size <= minsize, remove it, 0 means unlimited")
+	getCmd.PersistentFlags().BoolVar(&IsWithPlaceholder, "with-placeholder", false, "if create placeholder when ignore download")
+	getCmd.PersistentFlags().Int64Var(&MinSize, "minsize", 0, "if download file size < minsize, ignore download, 0 means unlimited")
+	getCmd.PersistentFlags().Int64Var(&MaxSize, "maxsize", 0, "if download file size > minsize, ignore download, 0 means unlimited")
+	getCmd.PersistentFlags().StringVar(&ViaIP, "via-ip", "", "bind which NIC, only for multi-network-interface machine")
 }
