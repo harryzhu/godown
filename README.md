@@ -2,7 +2,7 @@
 * download files or execute shell commands concurrently
 * 并行下载文件、并行执行shell命令，可以手动指定同时运行的任务数量，下载任务默认为同时下载3个，shell命令默认为同时执行CPU核数个任务。
 * 适用于命令彼此独立、互不依赖场景下的并行执行，方便其他程序调用执行。
-* 下载时可以指定流量从指定的网卡走，适合于多网卡机器。
+* 下载时可以指定流量从指定的网卡进出，适合于多网卡机器，避免大量下载影响其他服务场景。
 * 此工具目前正在被作者用于日常的文件批量下载、使用 `ffmpeg` 将视频转为图片。
 
 ## 并行下载文件：
@@ -16,7 +16,7 @@
 
 3）运行命令：
 ```
-./godown get
+./godown get --filelist=/Users/harry/filelist.txt
 ```
 即可开始并行下载，
 * `--workers=5` 可指定同时下载文件的任务数为`5`，默认为`3`；
@@ -24,6 +24,14 @@
 * `--user-agent` 可以指定发出request的UA；
 * `--header` 可以添加发出request的头部信息，支持多个；
 * `--via-ip` 如果服务器有多张网卡，可以通过此参数指定下载任务从指定网卡走，不会对其他网卡造成压力
+
+```
+./godown get --via-ip=192.168.0.114 --workers=4 --filelist={listfile} --minsize=716800 --maxsize=33554432 --debug=false --purge=true --with-placeholder
+```
+表示：
+1）所有下载流量仅从 192.168.0.114 这张网卡进出，
+
+2）远端文件头content-length如果小于700KB或者大于32MB，则忽略下载，但创建一个空文件占位（--with-placeholder），表示这个文件已经处理过了，继续下一个。
 
 
 ## 并行执行 `shell` 命令
