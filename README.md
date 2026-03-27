@@ -29,9 +29,10 @@
 ./godown get --via-ip=192.168.0.114 --workers=4 --filelist={listfile} --minsize=716800 --maxsize=33554432 --debug=false --purge=true --with-placeholder
 ```
 表示：
+
 1）所有下载流量仅从 192.168.0.114 这张网卡进出，
 
-2）远端文件头content-length如果小于700KB或者大于32MB，则忽略下载，但创建一个空文件占位（--with-placeholder），表示这个文件已经处理过了，继续下一个。
+2）远端文件头`content-length`显示文件如果小于`700KB`或者大于`32MB`，则忽略下载，但创建一个空文件占位（`--with-placeholder`），表示这个文件已经处理过了，继续下一个。
 
 
 ## 并行执行 `shell` 命令
